@@ -340,6 +340,7 @@ public class MainActivity
     private int exitTapCount = 0;
     private ImageView infoView;
     private ImageView updateView;
+    private ImageView settingsView;
 
     private View statusBarView;
     private View rightToolbarView;
@@ -1039,6 +1040,7 @@ public class MainActivity
         createExitButton();
         createInfoButton();
         createUpdateButton();
+        createSettingsButton();
     }
 
     private void createButtons() {
@@ -1410,6 +1412,15 @@ public class MainActivity
         updateView = createManageButton(R.drawable.ic_system_update_opaque_24dp, R.drawable.ic_system_update_black_24dp,
                 (int)(2.05f * getResources().getDimensionPixelOffset(R.dimen.info_icon_margin)));
         updateView.setOnClickListener(this);
+    }
+
+    private void createSettingsButton() {
+        if ( settingsView != null ) {
+            return;
+        }
+        settingsView = createManageButton(R.drawable.ic_settings_opaque_24dp, R.drawable.ic_settings_black_24dp,
+                (int)(3.1f * getResources().getDimensionPixelOffset(R.dimen.info_icon_margin)));
+        settingsView.setOnClickListener(this);
     }
 
     // The userInteraction flag denotes whether the config has been updated from the UI or in the background
@@ -2725,6 +2736,8 @@ public class MainActivity
     public void onClick( View v ) {
         if (v.equals(infoView)) {
             createAndShowInfoDialog();
+        } else if (v.equals(settingsView)) {
+            createAndShowDeviceSettingsDialog();
         } else if (v.equals(updateView)) {
             if (enterDeviceIdDialog != null && enterDeviceIdDialog.isShowing()) {
                 Log.i(Const.LOG_TAG, "Occasional update request when device info is entered, ignoring!");

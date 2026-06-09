@@ -78,6 +78,11 @@
     <string name="serial_number">Serial number</string>
     <string name="phone_number">Phone number</string>
     <string name="launcher_version">Launcher version</string>
+    <string name="device_settings">Device settings</string>
+    <string name="open_wifi_settings">Open Wi-Fi settings</string>
+    <string name="brightness">Brightness</string>
+    <string name="auto_brightness">Auto</string>
+    <string name="settings_not_supported">This setting is not supported on this device.</string>
     <string name="close">Close</string>
     <string name="admin_change_device_id">Change device ID</string>
     <string name="admin_change_server_url">Change server URL</string>

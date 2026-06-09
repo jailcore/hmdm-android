@@ -27,12 +27,15 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Handler;
+import android.provider.Settings;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
 import android.widget.ArrayAdapter;
+import android.widget.CompoundButton;
+import android.widget.SeekBar;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -45,6 +48,7 @@ import com.hmdm.launcher.BuildConfig;
 import com.hmdm.launcher.Const;
 import com.hmdm.launcher.R;
 import com.hmdm.launcher.databinding.DialogDeviceInfoBinding;
+import com.hmdm.launcher.databinding.DialogDeviceSettingsBinding;
 import com.hmdm.launcher.databinding.DialogEnterDeviceIdBinding;
 import com.hmdm.launcher.databinding.DialogEnterServerBinding;
 import com.hmdm.launcher.databinding.DialogNetworkErrorBinding;
@@ -78,6 +82,9 @@ public class BaseActivity extends AppCompatActivity {
 
     protected Dialog deviceInfoDialog;
     protected DialogDeviceInfoBinding dialogDeviceInfoBinding;
+
+    protected Dialog deviceSettingsDialog;
+    protected DialogDeviceSettingsBinding dialogDeviceSettingsBinding;
 
     protected void dismissDialog(Dialog dialog) {
         if (dialog != null) {
@@ -421,6 +428,82 @@ public class BaseActivity extends AppCompatActivity {
 
     public void closeDeviceInfoDialog( View view ) {
         dismissDialog(deviceInfoDialog);
+    }
+
+    protected void createAndShowDeviceSettingsDialog() {
+        dismissDialog(deviceSettingsDialog);
+        deviceSettingsDialog = new Dialog( this );
+        dialogDeviceSettingsBinding = DataBindingUtil.inflate(
+                LayoutInflater.from( this ),
+                R.layout.dialog_device_settings,
+                null,
+                false );
+        deviceSettingsDialog.requestWindowFeature( Window.FEATURE_NO_TITLE );
+        deviceSettingsDialog.setCancelable( false );
+
+        deviceSettingsDialog.setContentView( dialogDeviceSettingsBinding.getRoot() );
+
+        // Brightness. Applied system-wide through the device owner policy (Utils.setBrightnessPolicy).
+        int currentBrightness = 128;
+        boolean autoBrightness = false;
+        try {
+            currentBrightness = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS, 128);
+            autoBrightness = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_BRIGHTNESS_MODE,
+                    Settings.System.SCREEN_BRIGHTNESS_MODE_MANUAL) == Settings.System.SCREEN_BRIGHTNESS_MODE_AUTOMATIC;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        dialogDeviceSettingsBinding.brightnessSeek.setProgress(currentBrightness);
+        dialogDeviceSettingsBinding.brightnessSeek.setEnabled(!autoBrightness);
+        dialogDeviceSettingsBinding.autoBrightnessCheck.setChecked(autoBrightness);
+
+        dialogDeviceSettingsBinding.autoBrightnessCheck.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+            @Override
+            public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                dialogDeviceSettingsBinding.brightnessSeek.setEnabled(!isChecked);
+                boolean ok = isChecked
+                        ? Utils.setBrightnessPolicy(true, null, BaseActivity.this)
+                        : Utils.setBrightnessPolicy(false, dialogDeviceSettingsBinding.brightnessSeek.getProgress(), BaseActivity.this);
+                if (!ok) {
+                    Toast.makeText(BaseActivity.this, R.string.settings_not_supported, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        dialogDeviceSettingsBinding.brightnessSeek.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+                if (!Utils.setBrightnessPolicy(false, seekBar.getProgress(), BaseActivity.this)) {
+                    Toast.makeText(BaseActivity.this, R.string.settings_not_supported, Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
+        deviceSettingsDialog.show();
+    }
+
+    public void openWifiSettings( View view ) {
+        dismissDialog(deviceSettingsDialog);
+        try {
+            Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Toast.makeText(this, R.string.settings_not_supported, Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    public void closeDeviceSettingsDialog( View view ) {
+        dismissDialog(deviceSettingsDialog);
     }
 
 
