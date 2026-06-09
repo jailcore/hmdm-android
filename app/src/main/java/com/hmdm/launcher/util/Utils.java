@@ -575,6 +575,26 @@ public class Utils {
         return true;
     }
 
+    // Disable (or re-enable) the status bar pull-down: notification shade and quick settings.
+    // Requires the app to be the device owner.
+    public static boolean setStatusBarDisabled(boolean disabled, Context context) {
+        if (!isDeviceOwner(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.M) {
+            return false;
+        }
+
+        DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(
+                Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponentName = LegacyUtils.getAdminComponentName(context);
+
+        try {
+            devicePolicyManager.setStatusBarDisabled(adminComponentName, disabled);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
     public static boolean setScreenTimeoutPolicy(Boolean lock, Integer timeout, Context context) {
         if (!isDeviceOwner(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return false;

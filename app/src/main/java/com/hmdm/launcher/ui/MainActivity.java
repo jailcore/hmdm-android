@@ -557,6 +557,10 @@ public class MainActivity
         // Here we initialize all required fields to avoid crash at startup
         reinitApp();
 
+        // Keep the status bar pull-down (notification shade / quick settings) disabled.
+        // This is a device owner policy that stays in effect globally, including in other apps.
+        Utils.setStatusBarDisabled(true, this);
+
         statusBarUpdater.startUpdating(this, binding.clock, binding.batteryState);
 
         startServicesWithRetry();
@@ -2148,6 +2152,7 @@ public class MainActivity
         dismissDialog(overlaySettingsDialog);
         dismissDialog(administratorModeDialog);
         dismissDialog(deviceInfoDialog);
+        dismissDialog(deviceSettingsDialog);
         dismissDialog(accessibilityServiceDialog);
         dismissDialog(systemSettingsDialog);
         dismissDialog(permissionsDialog);
