@@ -561,6 +561,9 @@ public class MainActivity
         // This is a device owner policy that stays in effect globally, including in other apps.
         Utils.setStatusBarDisabled(true, this);
 
+        // Disable screen auto-rotation (device owner policy, stays in effect globally).
+        Utils.setAutoRotationDisabled(true, this);
+
         statusBarUpdater.startUpdating(this, binding.clock, binding.batteryState);
 
         startServicesWithRetry();
@@ -1344,7 +1347,7 @@ public class MainActivity
 
     private ImageView createManageButton(int imageResource, int imageResourceBlack, int offset) {
         RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        layoutParams.addRule(RelativeLayout.CENTER_VERTICAL);
+        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
         layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
 
         int offsetRight = 0;
@@ -1354,12 +1357,15 @@ public class MainActivity
         }
 
         RelativeLayout view = new RelativeLayout(this);
-        // Offset is multiplied by 2 because the view is centered. Yeah I know its an Induism)
-        view.setPadding(0, offset * 2, offsetRight, 0);
+        // Buttons are anchored to the top of the screen and stacked downwards starting from
+        // manage_buttons_top_margin, so they stay clear of a centered background logo.
+        int topMargin = getResources().getDimensionPixelOffset(R.dimen.manage_buttons_top_margin);
+        view.setPadding(0, topMargin + offset, offsetRight, 0);
         view.setLayoutParams(layoutParams);
 
         ImageView manageButton = new ImageView( this );
-        manageButton.setImageResource(isDarkBackground() ? imageResource : imageResourceBlack);
+        // Always use the white icon variant so the buttons stay clearly visible
+        manageButton.setImageResource(imageResource);
         view.addView(manageButton);
 
         selectedManageButtonBorder.setColor(0); // transparent background

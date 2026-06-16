@@ -30,6 +30,8 @@
     <dimen name="status_bar_height">40dp</dimen>
     <dimen name="prevent_applications_list_width">8dp</dimen>
     <dimen name="info_icon_margin">40dp</dimen>
+    <!-- Distance from the top of the screen where the right-side manage buttons (unlock/info/update/settings) start -->
+    <dimen name="manage_buttons_top_margin">16dp</dimen>
     <dimen name="block_window_button_width">150dp</dimen>
     <dimen name="button_text_size">12dp</dimen>
     <dimen name="button_text_size_small">12dp</dimen>

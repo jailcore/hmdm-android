@@ -595,6 +595,28 @@ public class Utils {
         return true;
     }
 
+    // Disable (or re-enable) system-wide screen auto-rotation, keeping the device in its
+    // current orientation. Requires the app to be the device owner (and Android 9+ for setSystemSetting).
+    public static boolean setAutoRotationDisabled(boolean disabled, Context context) {
+        if (!isDeviceOwner(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            return false;
+        }
+
+        DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(
+                Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponentName = LegacyUtils.getAdminComponentName(context);
+
+        try {
+            // ACCELEROMETER_ROTATION: 0 = auto-rotate off (locked), 1 = on
+            devicePolicyManager.setSystemSetting(adminComponentName,
+                    Settings.System.ACCELEROMETER_ROTATION, disabled ? "0" : "1");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
     public static boolean setScreenTimeoutPolicy(Boolean lock, Integer timeout, Context context) {
         if (!isDeviceOwner(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
             return false;
