@@ -128,7 +128,4 @@ public class ProUtils {
         return context.getString(R.string.app_name);
     }
 
-    public static String getCopyright(Context context) {
-        return "(c) " + Calendar.getInstance().get(Calendar.YEAR) + " " + context.getString(R.string.vendor);
-    }
 }

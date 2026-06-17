@@ -63,6 +63,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -341,6 +342,12 @@ public class MainActivity
     private ImageView infoView;
     private ImageView updateView;
     private ImageView settingsView;
+
+    // Collapsible tray holding the side manage buttons
+    private LinearLayout manageButtonsContainer;
+    private LinearLayout manageButtonsHolder;
+    private ImageView manageTrayToggle;
+    private boolean manageButtonsExpanded = false;
 
     private View statusBarView;
     private View rightToolbarView;
@@ -1345,39 +1352,95 @@ public class MainActivity
         return true;
     }
 
-    private ImageView createManageButton(int imageResource, int imageResourceBlack, int offset) {
-        RelativeLayout.LayoutParams layoutParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-        layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
-
-        int offsetRight = 0;
-        if (settingsHelper != null && settingsHelper.getConfig() != null && settingsHelper.getConfig().getLockStatusBar() != null && settingsHelper.getConfig().getLockStatusBar()) {
-            // If we lock the right bar, let's shift buttons to avoid overlapping
-            offsetRight = getResources().getDimensionPixelOffset(R.dimen.prevent_applications_list_width);
+    // Builds the collapsible tray: an always-visible arrow handle and a hidden holder for the buttons
+    private void createButtonsTray() {
+        if (manageButtonsContainer != null) {
+            return;
         }
 
-        RelativeLayout view = new RelativeLayout(this);
-        // Buttons are anchored to the top of the screen and stacked downwards starting from
-        // manage_buttons_top_margin, so they stay clear of a centered background logo.
-        int topMargin = getResources().getDimensionPixelOffset(R.dimen.manage_buttons_top_margin);
-        view.setPadding(0, topMargin + offset, offsetRight, 0);
-        view.setLayoutParams(layoutParams);
+        RelativeLayout.LayoutParams containerParams = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        containerParams.addRule(RelativeLayout.ALIGN_PARENT_TOP);
+        containerParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT);
+        containerParams.topMargin = getResources().getDimensionPixelOffset(R.dimen.manage_buttons_top_margin);
+        // Shift the whole tray (caret + buttons) slightly left from the right edge
+        int rightMargin = getResources().getDimensionPixelOffset(R.dimen.manage_buttons_right_margin);
+        if (settingsHelper != null && settingsHelper.getConfig() != null && settingsHelper.getConfig().getLockStatusBar() != null && settingsHelper.getConfig().getLockStatusBar()) {
+            // If we lock the right bar, shift the tray left further to avoid overlapping
+            rightMargin += getResources().getDimensionPixelOffset(R.dimen.prevent_applications_list_width);
+        }
+        containerParams.rightMargin = rightMargin;
+
+        manageButtonsContainer = new LinearLayout(this);
+        manageButtonsContainer.setOrientation(LinearLayout.VERTICAL);
+        manageButtonsContainer.setGravity(Gravity.RIGHT);
+        manageButtonsContainer.setLayoutParams(containerParams);
+
+        // Always-visible arrow handle that expands/collapses the buttons
+        manageTrayToggle = new ImageView(this);
+        manageTrayToggle.setImageResource(R.drawable.ic_expand_more_opaque_24dp);
+        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        toggleParams.gravity = Gravity.RIGHT;
+        manageTrayToggle.setLayoutParams(toggleParams);
+        manageTrayToggle.setOnClickListener(v -> toggleManageButtons());
+        applyManageButtonFocusBorder(manageTrayToggle);
+        manageButtonsContainer.addView(manageTrayToggle);
+
+        // Collapsible holder for the action buttons, hidden by default
+        manageButtonsHolder = new LinearLayout(this);
+        manageButtonsHolder.setOrientation(LinearLayout.VERTICAL);
+        manageButtonsHolder.setGravity(Gravity.RIGHT);
+        manageButtonsHolder.setVisibility(View.GONE);
+        manageButtonsContainer.addView(manageButtonsHolder);
+
+        try {
+            RelativeLayout root = findViewById(R.id.activity_main);
+            root.addView(manageButtonsContainer);
+        } catch ( Exception e ) { e.printStackTrace(); }
+    }
+
+    private void toggleManageButtons() {
+        if (manageButtonsHolder == null || manageTrayToggle == null) {
+            return;
+        }
+        manageButtonsExpanded = !manageButtonsExpanded;
+        try {
+            // Animate the reveal/hide so the tray slides out
+            android.transition.TransitionManager.beginDelayedTransition(manageButtonsContainer);
+        } catch (Exception e) {
+            // Animation is optional
+        }
+        manageButtonsHolder.setVisibility(manageButtonsExpanded ? View.VISIBLE : View.GONE);
+        manageTrayToggle.setImageResource(manageButtonsExpanded
+                ? R.drawable.ic_expand_less_opaque_24dp
+                : R.drawable.ic_expand_more_opaque_24dp);
+    }
+
+    private void applyManageButtonFocusBorder(View button) {
+        selectedManageButtonBorder.setColor(0); // transparent background
+        selectedManageButtonBorder.setStroke(2, isDarkBackground() ? 0xa0ffffff : 0xa0000000); // white or black border with some transparency
+        button.setOnFocusChangeListener((v, hasFocus) -> {
+            v.setBackground(hasFocus ? selectedManageButtonBorder : null);
+        });
+    }
+
+    private ImageView createManageButton(int imageResource, int imageResourceBlack, int offset) {
+        // Buttons live inside the collapsible tray rather than directly on the screen
+        createButtonsTray();
+
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        layoutParams.gravity = Gravity.RIGHT;
+        layoutParams.topMargin = getResources().getDimensionPixelOffset(R.dimen.manage_button_spacing);
 
         ImageView manageButton = new ImageView( this );
         // Always use the white icon variant so the buttons stay clearly visible
         manageButton.setImageResource(imageResource);
-        view.addView(manageButton);
+        manageButton.setLayoutParams(layoutParams);
 
-        selectedManageButtonBorder.setColor(0); // transparent background
-        selectedManageButtonBorder.setStroke(2, isDarkBackground() ? 0xa0ffffff : 0xa0000000); // white or black border with some transparency
-        manageButton.setOnFocusChangeListener((v, hasFocus) -> {
-            v.setBackground(hasFocus ? selectedManageButtonBorder : null);
-        });
+        applyManageButtonFocusBorder(manageButton);
 
-        try {
-            RelativeLayout root = findViewById(R.id.activity_main);
-            root.addView(view);
-        } catch ( Exception e ) { e.printStackTrace(); }
+        if (manageButtonsHolder != null) {
+            manageButtonsHolder.addView(manageButton);
+        }
         return manageButton;
     }
 

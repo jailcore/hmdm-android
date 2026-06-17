@@ -19,9 +19,8 @@
 
 <resources>
     <string name="white_app_name" translatable="false">MDM Agent</string>
-    <string name="app_name" translatable="false">Headwind MDM</string>
+    <string name="app_name" translatable="false">JailCore MDM</string>
     <string name="admin_title">Administrator</string>
-    <string name="vendor" translatable="false">h-mdm.com</string>
     <string name="install_error">Error installing</string>
     <string name="file_create_error">Error creating file</string>
     <string name="dialog_enter_device_id_error">This ID is not registered at %s. Get the ID from \"Devices\" tab of the control panel.</string>
@@ -82,6 +81,16 @@
     <string name="open_wifi_settings">Open Wi-Fi settings</string>
     <string name="brightness">Brightness</string>
     <string name="auto_brightness">Auto</string>
+    <string name="screen_timeout">Screen timeout</string>
+    <string-array name="screen_timeout_entries">
+        <item>15 seconds</item>
+        <item>30 seconds</item>
+        <item>1 minute</item>
+        <item>2 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>30 minutes</item>
+    </string-array>
     <string name="settings_not_supported">This setting is not supported on this device.</string>
     <string name="close">Close</string>
     <string name="admin_change_device_id">Change device ID</string>

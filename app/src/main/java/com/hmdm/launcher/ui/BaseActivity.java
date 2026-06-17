@@ -33,6 +33,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.inputmethod.InputMethodManager;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.CompoundButton;
 import android.widget.SeekBar;
@@ -396,32 +397,12 @@ public class BaseActivity extends AppCompatActivity {
 
         SettingsHelper settingsHelper = SettingsHelper.getInstance(this);
 
-        String phone = DeviceInfoProvider.getPhoneNumber(this);
-        if (phone == null || phone.equals("")) {
-            phone = settingsHelper.getConfig() != null ? settingsHelper.getConfig().getPhone() : "";
-        }
-        dialogDeviceInfoBinding.setPhone(phone);
-
-        String imei = DeviceInfoProvider.getImei(this);
-        if (imei == null || imei.equals("")) {
-            imei = settingsHelper.getConfig() != null ? settingsHelper.getConfig().getImei() : "";
-        }
-        dialogDeviceInfoBinding.setImei(imei);
-
         String hideIdsStr = settingsHelper.getAppPreference(getPackageName(), "hide_ids");
         if ("1".equals(hideIdsStr) || "true".equalsIgnoreCase(hideIdsStr)) {
-            dialogDeviceInfoBinding.imeiLayout.setVisibility(View.GONE);
             dialogDeviceInfoBinding.serialLayout.setVisibility(View.GONE);
         }
 
         dialogDeviceInfoBinding.setDeviceId(SettingsHelper.getInstance(this).getDeviceId());
-        dialogDeviceInfoBinding.setVersion(BuildConfig.VERSION_NAME + "-" + Utils.getLauncherVariant());
-
-        String serverPath = SettingsHelper.getInstance(this).getServerProject();
-        if (serverPath.length() > 0) {
-            serverPath = "/" + serverPath;
-        }
-        dialogDeviceInfoBinding.setServerUrl(SettingsHelper.getInstance(this).getBaseUrl() + serverPath);
 
         deviceInfoDialog.show();
     }
@@ -484,6 +465,51 @@ public class BaseActivity extends AppCompatActivity {
                 if (!Utils.setBrightnessPolicy(false, seekBar.getProgress(), BaseActivity.this)) {
                     Toast.makeText(BaseActivity.this, R.string.settings_not_supported, Toast.LENGTH_SHORT).show();
                 }
+            }
+        });
+
+        // Screen timeout. Applied system-wide through the device owner policy (Utils.setScreenTimeoutPolicy).
+        // Values (in seconds) are parallel to the entries in R.array.screen_timeout_entries.
+        final int[] timeoutValues = { 15, 30, 60, 120, 300, 600, 1800 };
+        ArrayAdapter<CharSequence> timeoutAdapter = ArrayAdapter.createFromResource(this,
+                R.array.screen_timeout_entries, android.R.layout.simple_spinner_item);
+        timeoutAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        dialogDeviceSettingsBinding.screenTimeoutSpinner.setAdapter(timeoutAdapter);
+
+        int currentTimeoutSec = 60;
+        try {
+            currentTimeoutSec = Settings.System.getInt(getContentResolver(), Settings.System.SCREEN_OFF_TIMEOUT, 60000) / 1000;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        int closestIndex = 0;
+        int closestDiff = Integer.MAX_VALUE;
+        for (int i = 0; i < timeoutValues.length; i++) {
+            int diff = Math.abs(timeoutValues[i] - currentTimeoutSec);
+            if (diff < closestDiff) {
+                closestDiff = diff;
+                closestIndex = i;
+            }
+        }
+        dialogDeviceSettingsBinding.screenTimeoutSpinner.setSelection(closestIndex);
+
+        // Skip the automatic selection callback fired on layout, so that simply opening the dialog
+        // does not apply (and lock) the screen timeout policy - only an explicit user choice does.
+        final boolean[] skipFirstTimeoutSelect = { true };
+        dialogDeviceSettingsBinding.screenTimeoutSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (skipFirstTimeoutSelect[0]) {
+                    skipFirstTimeoutSelect[0] = false;
+                    return;
+                }
+                if (!Utils.setScreenTimeoutPolicy(true, timeoutValues[position], BaseActivity.this)) {
+                    Toast.makeText(BaseActivity.this, R.string.settings_not_supported, Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
             }
         });
 

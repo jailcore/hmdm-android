@@ -228,6 +228,16 @@
             </intent-filter>
         </receiver>
 
+        <!-- Relaunch the launcher after it updates its own APK to restore the lockdown -->
+        <receiver
+            android:name="com.hmdm.launcher.receiver.PackageReplacedReceiver"
+            android:enabled="true"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
+
         <provider
             android:name="androidx.core.content.FileProvider"
             android:authorities="${applicationId}.provider"

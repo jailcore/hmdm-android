@@ -76,7 +76,7 @@ public class AdminActivity extends BaseActivity {
             }
         });
         binding.toolbar.setTitle(ProUtils.getAppName(this));
-        binding.toolbar.setSubtitle(ProUtils.getCopyright(this));
+        //binding.toolbar.setSubtitle(ProUtils.getCopyright(this));
 
         // If QR code doesn't contain "android.app.extra.PROVISIONING_LEAVE_ALL_SYSTEM_APPS_ENABLED":true
         // the system launcher is turned off, so it's not possible to exit and we must hide the exit button

@@ -67,30 +67,6 @@
             android:onClick="allowSettings"/>
 
         <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            android:text="@string/admin_clear_restrictions"
-            android:onClick="clearRestrictions"/>
-
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            android:text="@string/admin_change_device_id"
-            android:onClick="changeDeviceId"/>
-
-        <Button
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            android:text="@string/admin_change_server_url"
-            android:onClick="changeServerUrl"/>
-
-        <Button
             android:visibility="gone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -107,24 +83,6 @@
             android:layout_marginRight="@dimen/activity_horizontal_margin"
             android:text="@string/admin_exit"
             android:onClick="exitToSystemLauncher"/>
-
-        <Button
-            android:id="@+id/resetPermissionsButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            android:text="@string/admin_reset_permissions"
-            android:onClick="resetPermissions"/>
-
-        <Button
-            android:id="@+id/resetNetworkButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginLeft="@dimen/activity_horizontal_margin"
-            android:layout_marginRight="@dimen/activity_horizontal_margin"
-            android:text="@string/admin_reset_network"
-            android:onClick="resetNetworkPolicy"/>
 
         <Button
             android:id="@+id/rebootButton"
