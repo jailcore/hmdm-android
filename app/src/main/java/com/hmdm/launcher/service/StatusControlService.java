@@ -173,6 +173,16 @@ public class StatusControlService extends Service {
             }
         }
 
+        // Soft volume lock: when the admin manages the level and locks the volume, the
+        // DISALLOW_ADJUST_VOLUME restriction is intentionally not applied (it would mute the
+        // master volume). Re-assert the managed level here so any change the user manages to
+        // make snaps back to the configured value.
+        if (config.getManageVolume() != null && config.getManageVolume()
+                && config.getVolume() != null
+                && config.getLockVolume() != null && config.getLockVolume()) {
+            Utils.setVolume(config.getVolume(), this);
+        }
+
         if (config.getMobileData() != null) {
             ConnectivityManager cm = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
             if (cm != null) {

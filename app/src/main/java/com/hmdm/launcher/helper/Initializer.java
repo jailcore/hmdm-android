@@ -278,7 +278,10 @@ public class Initializer {
         Utils.setBrightnessPolicy(config.getAutoBrightness(), config.getBrightness(), context);
         Utils.setScreenTimeoutPolicy(config.getManageTimeout(), config.getTimeout(), context);
 
-        if (config.getManageVolume() != null && config.getManageVolume() && config.getVolume() != null) {
+        boolean manageVolumeLevel = config.getManageVolume() != null && config.getManageVolume()
+                && config.getVolume() != null;
+
+        if (manageVolumeLevel) {
             Utils.lockVolume(false, context);
             if (!Utils.setVolume(config.getVolume(), context)) {
                 RemoteLogger.log(context, Const.LOG_WARN, "Failed to set the device volume");
@@ -286,7 +289,16 @@ public class Initializer {
         }
 
         if (config.getLockVolume() != null) {
-            Utils.lockVolume(config.getLockVolume(), context);
+            // DISALLOW_ADJUST_VOLUME forces the OS to mute the master volume the whole time it is
+            // active, so a hard lock silences the device even with the streams set to 100%. When the
+            // admin also manages the volume level, keep the device unrestricted (audible) and rely on
+            // the soft lock instead: StatusControlService re-asserts the managed level, and
+            // MainActivity swallows the volume keys so the system volume panel never appears.
+            if (config.getLockVolume() && manageVolumeLevel) {
+                Utils.lockVolume(false, context);
+            } else {
+                Utils.lockVolume(config.getLockVolume(), context);
+            }
         }
 
         Utils.disableScreenshots(config.isDisableScreenshots(), context);

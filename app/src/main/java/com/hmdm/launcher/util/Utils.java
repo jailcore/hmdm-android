@@ -595,6 +595,56 @@ public class Utils {
         return true;
     }
 
+    // Disable the device's digital assistant so a long-press on Home (or the assist gesture)
+    // no longer launches it. There is no DevicePolicyManager API to disable just the gesture,
+    // so we detect whichever package currently provides the assistant (from the secure settings,
+    // which can be read without any special permission) and hide/suspend it as device owner.
+    // Returns true if at least one assistant package was disabled.
+    public static boolean disableAssistant(Context context) {
+        if (!isDeviceOwner(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            return false;
+        }
+
+        DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(
+                Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponentName = LegacyUtils.getAdminComponentName(context);
+
+        // "assistant" is used by the assist gesture; "voice_interaction_service" is the fallback.
+        String[] keys = { "assistant", "voice_interaction_service" };
+        Set<String> packages = new java.util.HashSet<>();
+        for (String key : keys) {
+            try {
+                String value = Settings.Secure.getString(context.getContentResolver(), key);
+                if (value != null && !value.trim().isEmpty()) {
+                    // The value is a flattened ComponentName "package/class".
+                    String pkg = value.contains("/") ? value.substring(0, value.indexOf('/')) : value;
+                    pkg = pkg.trim();
+                    if (!pkg.isEmpty() && !pkg.equals(context.getPackageName())) {
+                        packages.add(pkg);
+                    }
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        boolean result = false;
+        for (String pkg : packages) {
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    devicePolicyManager.setPackagesSuspended(adminComponentName, new String[]{ pkg }, true);
+                }
+                devicePolicyManager.setApplicationHidden(adminComponentName, pkg, true);
+                Log.i(Const.LOG_TAG, "Disabled assistant package: " + pkg);
+                result = true;
+            } catch (Exception e) {
+                Log.w(Const.LOG_TAG, "Failed to disable assistant package " + pkg + ": " + e.getMessage());
+                e.printStackTrace();
+            }
+        }
+        return result;
+    }
+
     // Disable (or re-enable) system-wide screen auto-rotation, keeping the device in its
     // current orientation. Requires the app to be the device owner (and Android 9+ for setSystemSetting).
     public static boolean setAutoRotationDisabled(boolean disabled, Context context) {

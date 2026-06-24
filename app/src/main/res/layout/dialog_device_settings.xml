@@ -40,14 +40,6 @@
             android:textStyle="bold"
             android:text="@string/device_settings"/>
 
-        <Button
-            android:id="@+id/wifi_settings_button"
-            android:layout_width="@dimen/device_info_width"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            android:text="@string/open_wifi_settings"
-            android:onClick="openWifiSettings"/>
-
         <LinearLayout
             android:layout_width="@dimen/device_info_width"
             android:layout_height="wrap_content"

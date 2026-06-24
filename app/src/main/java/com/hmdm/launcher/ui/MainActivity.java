@@ -57,6 +57,7 @@ import android.view.Display;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -348,6 +349,9 @@ public class MainActivity
     private LinearLayout manageButtonsHolder;
     private ImageView manageTrayToggle;
     private boolean manageButtonsExpanded = false;
+    // Auto-collapse the tray back to just the arrow after this much inactivity
+    private static final long MANAGE_BUTTONS_COLLAPSE_DELAY_MS = 15000;
+    private final Runnable collapseManageButtonsRunnable = () -> setManageButtonsExpanded(false);
 
     private View statusBarView;
     private View rightToolbarView;
@@ -568,6 +572,9 @@ public class MainActivity
         // This is a device owner policy that stays in effect globally, including in other apps.
         Utils.setStatusBarDisabled(true, this);
 
+        // Disable the digital assistant so long-pressing Home doesn't launch it.
+        Utils.disableAssistant(this);
+
         // Disable screen auto-rotation (device owner policy, stays in effect globally).
         Utils.setAutoRotationDisabled(true, this);
 
@@ -622,6 +629,22 @@ public class MainActivity
             };
         }
         return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        // When the volume is locked, swallow the hardware volume keys so the system volume
+        // panel never pops up and the level cannot be changed. We use a soft lock (see
+        // Initializer) instead of DISALLOW_ADJUST_VOLUME, which would mute the device, so the
+        // keys have to be intercepted here while the launcher is in the foreground.
+        int keyCode = event.getKeyCode();
+        if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
+            ServerConfig config = settingsHelper != null ? settingsHelper.getConfig() : null;
+            if (config != null && config.getLockVolume() != null && config.getLockVolume()) {
+                return true;
+            }
+        }
+        return super.dispatchKeyEvent(event);
     }
 
     // Workaround against crash "App is in background" on Android 9: this is an Android OS bug
@@ -1378,8 +1401,10 @@ public class MainActivity
         // Always-visible arrow handle that expands/collapses the buttons
         manageTrayToggle = new ImageView(this);
         manageTrayToggle.setImageResource(R.drawable.ic_expand_more_opaque_24dp);
-        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int toggleSize = getResources().getDimensionPixelSize(R.dimen.manage_button_size);
+        LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(toggleSize, toggleSize);
         toggleParams.gravity = Gravity.RIGHT;
+        manageTrayToggle.setScaleType(ImageView.ScaleType.FIT_CENTER);
         manageTrayToggle.setLayoutParams(toggleParams);
         manageTrayToggle.setOnClickListener(v -> toggleManageButtons());
         applyManageButtonFocusBorder(manageTrayToggle);
@@ -1399,20 +1424,36 @@ public class MainActivity
     }
 
     private void toggleManageButtons() {
+        setManageButtonsExpanded(!manageButtonsExpanded);
+    }
+
+    private void setManageButtonsExpanded(boolean expanded) {
         if (manageButtonsHolder == null || manageTrayToggle == null) {
             return;
         }
-        manageButtonsExpanded = !manageButtonsExpanded;
+        manageButtonsExpanded = expanded;
         try {
             // Animate the reveal/hide so the tray slides out
             android.transition.TransitionManager.beginDelayedTransition(manageButtonsContainer);
         } catch (Exception e) {
             // Animation is optional
         }
-        manageButtonsHolder.setVisibility(manageButtonsExpanded ? View.VISIBLE : View.GONE);
-        manageTrayToggle.setImageResource(manageButtonsExpanded
+        manageButtonsHolder.setVisibility(expanded ? View.VISIBLE : View.GONE);
+        manageTrayToggle.setImageResource(expanded
                 ? R.drawable.ic_expand_less_opaque_24dp
                 : R.drawable.ic_expand_more_opaque_24dp);
+        if (expanded) {
+            // Start (or restart) the inactivity countdown to auto-collapse the tray
+            scheduleManageButtonsCollapse();
+        } else {
+            handler.removeCallbacks(collapseManageButtonsRunnable);
+        }
+    }
+
+    // Restart the 15-second inactivity timer that collapses the tray back to just the arrow
+    private void scheduleManageButtonsCollapse() {
+        handler.removeCallbacks(collapseManageButtonsRunnable);
+        handler.postDelayed(collapseManageButtonsRunnable, MANAGE_BUTTONS_COLLAPSE_DELAY_MS);
     }
 
     private void applyManageButtonFocusBorder(View button) {
@@ -1427,14 +1468,25 @@ public class MainActivity
         // Buttons live inside the collapsible tray rather than directly on the screen
         createButtonsTray();
 
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        int buttonSize = getResources().getDimensionPixelSize(R.dimen.manage_button_size);
+        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(buttonSize, buttonSize);
         layoutParams.gravity = Gravity.RIGHT;
         layoutParams.topMargin = getResources().getDimensionPixelOffset(R.dimen.manage_button_spacing);
 
         ImageView manageButton = new ImageView( this );
         // Always use the white icon variant so the buttons stay clearly visible
         manageButton.setImageResource(imageResource);
+        // Scale the icon up to fill the larger button bounds
+        manageButton.setScaleType(ImageView.ScaleType.FIT_CENTER);
         manageButton.setLayoutParams(layoutParams);
+
+        // Any touch on a button counts as activity and pushes back the auto-collapse timer
+        manageButton.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN && manageButtonsExpanded) {
+                scheduleManageButtonsCollapse();
+            }
+            return false;
+        });
 
         applyManageButtonFocusBorder(manageButton);
 
