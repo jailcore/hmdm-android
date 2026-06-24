@@ -1006,7 +1006,7 @@ public class MainActivity
 
     private void createAndShowPermissionsDialog() {
         dismissDialog(permissionsDialog);
-        permissionsDialog = new Dialog( this );
+        permissionsDialog = newManagedDialog();
         dialogPermissionsBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_permissions,
@@ -1031,7 +1031,7 @@ public class MainActivity
 
     private void createAndShowAccessibilityServiceDialog() {
         dismissDialog(accessibilityServiceDialog);
-        accessibilityServiceDialog = new Dialog( this );
+        accessibilityServiceDialog = newManagedDialog();
         dialogAccessibilityServiceBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_accessibility_service,
@@ -2283,7 +2283,7 @@ public class MainActivity
 
     private void createAndShowAdministratorDialog() {
         dismissDialog(administratorModeDialog);
-        administratorModeDialog = new Dialog( this );
+        administratorModeDialog = newManagedDialog();
         dialogAdministratorModeBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_administrator_mode,
@@ -2318,7 +2318,7 @@ public class MainActivity
 
     private void createAndShowFileNotDownloadedDialog(String fileName) {
         dismissDialog(fileNotDownloadedDialog);
-        fileNotDownloadedDialog = new Dialog( this );
+        fileNotDownloadedDialog = newManagedDialog();
         dialogFileDownloadingFailedBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_file_downloading_failed,
@@ -2358,7 +2358,7 @@ public class MainActivity
 
     private void createAndShowHistorySettingsDialog() {
         dismissDialog(historySettingsDialog);
-        historySettingsDialog = new Dialog( this );
+        historySettingsDialog = newManagedDialog();
         dialogHistorySettingsBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_history_settings,
@@ -2391,7 +2391,7 @@ public class MainActivity
 
     private void createAndShowManageStorageDialog() {
         dismissDialog(manageStorageDialog);
-        manageStorageDialog = new Dialog( this );
+        manageStorageDialog = newManagedDialog();
         dialogManageStorageBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_manage_storage,
@@ -2440,7 +2440,7 @@ public class MainActivity
 
     private void createAndShowOverlaySettingsDialog() {
         dismissDialog(overlaySettingsDialog);
-        overlaySettingsDialog = new Dialog( this );
+        overlaySettingsDialog = newManagedDialog();
         dialogOverlaySettingsBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_overlay_settings,
@@ -2694,7 +2694,7 @@ public class MainActivity
 
     private void createAndShowEnterPasswordDialog() {
         dismissDialog(enterPasswordDialog);
-        enterPasswordDialog = new Dialog( this );
+        enterPasswordDialog = newManagedDialog();
         dialogEnterPasswordBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_enter_password,
@@ -2757,7 +2757,7 @@ public class MainActivity
 
     private void createAndShowUnknownSourcesDialog() {
         dismissDialog(unknownSourcesDialog);
-        unknownSourcesDialog = new Dialog( this );
+        unknownSourcesDialog = newManagedDialog();
         dialogUnknownSourcesBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_unknown_sources,
@@ -2782,7 +2782,7 @@ public class MainActivity
 
     private void createAndShowMiuiPermissionsDialog(int screen) {
         dismissDialog(miuiPermissionsDialog);
-        miuiPermissionsDialog = new Dialog( this );
+        miuiPermissionsDialog = newManagedDialog();
         dialogMiuiPermissionsBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_miui_permissions,
@@ -2905,7 +2905,7 @@ public class MainActivity
 
     private void createAndShowSystemSettingDialog(final String message, final Intent settingsIntent, final Integer requestCode) {
         dismissDialog(systemSettingsDialog);
-        systemSettingsDialog = new Dialog( this );
+        systemSettingsDialog = newManagedDialog();
         dialogSystemSettingsBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_system_settings,

@@ -29,6 +29,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
@@ -98,7 +99,7 @@ public class BaseActivity extends AppCompatActivity {
 
     protected void createAndShowEnterDeviceIdDialog( boolean error, String deviceId ) {
         dismissDialog(enterDeviceIdDialog);
-        enterDeviceIdDialog = new Dialog( this );
+        enterDeviceIdDialog = newManagedDialog();
         enterDeviceIdDialogBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_enter_device_id,
@@ -281,7 +282,7 @@ public class BaseActivity extends AppCompatActivity {
                                                    boolean showResetButton,
                                                    boolean showWifiButton) {
         dismissDialog(networkErrorDialog);
-        networkErrorDialog = new Dialog( this );
+        networkErrorDialog = newManagedDialog();
         dialogNetworkErrorBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_network_error,
@@ -313,7 +314,7 @@ public class BaseActivity extends AppCompatActivity {
 
     protected void createAndShowServerDialog(boolean error, String serverName, String serverPath) {
         dismissDialog(enterServerDialog);
-        enterServerDialog = new Dialog( this );
+        enterServerDialog = newManagedDialog();
         dialogEnterServerBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_enter_server,
@@ -382,7 +383,7 @@ public class BaseActivity extends AppCompatActivity {
     @SuppressLint( { "MissingPermission" } )
     protected void createAndShowInfoDialog() {
         dismissDialog(deviceInfoDialog);
-        deviceInfoDialog = new Dialog( this );
+        deviceInfoDialog = newManagedDialog();
         dialogDeviceInfoBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_device_info,
@@ -411,9 +412,27 @@ public class BaseActivity extends AppCompatActivity {
         dismissDialog(deviceInfoDialog);
     }
 
+    // Creates a dialog that swallows the hardware volume keys while the volume is locked. A Dialog
+    // has its own window and receives key events before the host Activity, so the Activity-level
+    // volume key block (MainActivity.dispatchKeyEvent) doesn't apply on top of a modal - hence we
+    // attach the same guard here. All managed dialogs are created through this factory.
+    protected Dialog newManagedDialog() {
+        Dialog dialog = new Dialog(this);
+        dialog.setOnKeyListener((d, keyCode, event) -> isVolumeKeyBlocked(keyCode));
+        return dialog;
+    }
+
+    protected boolean isVolumeKeyBlocked(int keyCode) {
+        if (keyCode != KeyEvent.KEYCODE_VOLUME_UP && keyCode != KeyEvent.KEYCODE_VOLUME_DOWN) {
+            return false;
+        }
+        ServerConfig config = SettingsHelper.getInstance(this).getConfig();
+        return config != null && config.getLockVolume() != null && config.getLockVolume();
+    }
+
     protected void createAndShowDeviceSettingsDialog() {
         dismissDialog(deviceSettingsDialog);
-        deviceSettingsDialog = new Dialog( this );
+        deviceSettingsDialog = newManagedDialog();
         dialogDeviceSettingsBinding = DataBindingUtil.inflate(
                 LayoutInflater.from( this ),
                 R.layout.dialog_device_settings,
