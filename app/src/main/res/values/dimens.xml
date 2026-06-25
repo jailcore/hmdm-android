@@ -34,8 +34,10 @@
     <dimen name="manage_buttons_top_margin">16dp</dimen>
     <!-- Vertical gap between the collapsible manage buttons in the tray -->
     <dimen name="manage_button_spacing">16dp</dimen>
-    <!-- Size (width and height) of each manage button icon in the tray -->
+    <!-- Size (width and height) of the tray's caret toggle -->
     <dimen name="manage_button_size">48dp</dimen>
+    <!-- Size (width and height) of each action button below the caret (a bit smaller than the caret) -->
+    <dimen name="manage_button_size_small">40dp</dimen>
     <!-- How far the manage buttons tray (caret + buttons) is shifted left from the right edge -->
     <dimen name="manage_buttons_right_margin">24dp</dimen>
     <dimen name="block_window_button_width">150dp</dimen>

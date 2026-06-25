@@ -1468,7 +1468,7 @@ public class MainActivity
         // Buttons live inside the collapsible tray rather than directly on the screen
         createButtonsTray();
 
-        int buttonSize = getResources().getDimensionPixelSize(R.dimen.manage_button_size);
+        int buttonSize = getResources().getDimensionPixelSize(R.dimen.manage_button_size_small);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(buttonSize, buttonSize);
         layoutParams.gravity = Gravity.RIGHT;
         layoutParams.topMargin = getResources().getDimensionPixelOffset(R.dimen.manage_button_spacing);

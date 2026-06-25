@@ -41,8 +41,8 @@ android {
         // downgrade the dependency to com.fasterxml.jackson to 2.13.5
         minSdkVersion 26
         targetSdkVersion 34
-        versionCode 15380
-        versionName "6.56"
+        versionCode 15383
+        versionName "6.58"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         dataBinding {
             enabled = true
@@ -78,7 +78,7 @@ android {
         // Not recommended for security purposes!
         buildConfigField("Boolean", "TRUST_ANY_CERTIFICATE", "false")
         // A shared secret to sign server config requests and MQTT (Push) messages
-        buildConfigField("String", "REQUEST_SIGNATURE", "\"changeme-C3z9vi54\"")
+        buildConfigField("String", "REQUEST_SIGNATURE", "\"6834d52f78bae9ca81a4b47150205efac0ab2549df573411368e284ce5a88f0b\"")
         // Set this parameter to true if the server signature should be checked
         // (additional protection against Man-In-The-Middle attacks)
         buildConfigField("Boolean", "CHECK_SIGNATURE", "false")
