@@ -198,6 +198,13 @@ public class MainActivity
     private static boolean configInitialized = false;
     // This flag is used to exit kiosk to avoid looping in onResume()
     private static boolean interruptResumeFlow = false;
+    // The administrator password dialog stays open across a pause (see onPause), but an activity
+    // recreation - a configuration change, for instance - destroys its window anyway. These flags
+    // let us bring the dialog back (with the text already typed) as soon as we resume, so the user
+    // never has to tap the key icon 6 times again because of an event out of their control.
+    // They are static to survive the recreation of the activity.
+    private static boolean restoreEnterPasswordDialog = false;
+    private static String enterPasswordText = null;
     private static final int BOOT_DURATION_SEC = 120;
     private static final int PAUSE_BETWEEN_AUTORUNS_SEC = 5;
     private boolean sendDeviceInfoScheduled = false;
@@ -584,6 +591,7 @@ public class MainActivity
 
         if (interruptResumeFlow) {
             interruptResumeFlow = false;
+            restoreEnterPasswordDialogIfNeeded();
             return;
         }
 
@@ -606,6 +614,8 @@ public class MainActivity
             bottomAppListAdapter.updateShortcuts(this);
             bottomAppListAdapter.notifyDataSetChanged();
         }
+
+        restoreEnterPasswordDialogIfNeeded();
     }
 
     private void lockOrientation() {
@@ -2208,6 +2218,15 @@ public class MainActivity
     protected void onDestroy() {
         super.onDestroy();
 
+        if (isFinishing()) {
+            // The activity is gone for good (not just recreated): don't pop the password dialog
+            // up again at the next start
+            clearEnterPasswordDialogState();
+        }
+        // The password dialog is kept open while the activity is paused, so this is the place
+        // where its window has to be released
+        dismissDialog(enterPasswordDialog);
+
         settingsHelper.setMainActivityRunning(false);
 
         WindowManager manager = ((WindowManager)getApplicationContext().getSystemService(Context.WINDOW_SERVICE));
@@ -2267,7 +2286,13 @@ public class MainActivity
         dismissDialog(enterServerDialog);
         dismissDialog(enterDeviceIdDialog);
         dismissDialog(networkErrorDialog);
-        dismissDialog(enterPasswordDialog);
+        // The administrator password dialog is NOT dismissed here: it must stay open until the
+        // user presses Login or Cancel. The activity may be paused by events out of the user's
+        // control (a background app brought to front, a system dialog, the screen turning off),
+        // and closing the dialog forced the user to tap the key icon 6 times all over again.
+        // It is dismissed in onDestroy() to avoid leaking the window, and the state saved here
+        // restores it if the activity is recreated (e.g. on a configuration change).
+        saveEnterPasswordDialogState();
         dismissDialog(historySettingsDialog);
         dismissDialog(unknownSourcesDialog);
         dismissDialog(overlaySettingsDialog);
@@ -2693,6 +2718,11 @@ public class MainActivity
     }
 
     private void createAndShowEnterPasswordDialog() {
+        clearEnterPasswordDialogState();
+        createAndShowEnterPasswordDialog(null);
+    }
+
+    private void createAndShowEnterPasswordDialog(String initialPassword) {
         dismissDialog(enterPasswordDialog);
         enterPasswordDialog = newManagedDialog();
         dialogEnterPasswordBinding = DataBindingUtil.inflate(
@@ -2705,6 +2735,12 @@ public class MainActivity
 
         enterPasswordDialog.setContentView( dialogEnterPasswordBinding.getRoot() );
         dialogEnterPasswordBinding.setLoading( false );
+        if (initialPassword != null) {
+            // Restoring the dialog after a transient pause: bring back what the user already typed
+            dialogEnterPasswordBinding.password.setText(initialPassword);
+            dialogEnterPasswordBinding.password.setSelection(initialPassword.length());
+            dialogEnterPasswordBinding.password.requestFocus();
+        }
         try {
             enterPasswordDialog.show();
         } catch (Exception e) {
@@ -2714,7 +2750,38 @@ public class MainActivity
         }
     }
 
+    // Remember that the administrator password dialog is open so it can be restored on resume
+    private void saveEnterPasswordDialogState() {
+        if (enterPasswordDialog != null && enterPasswordDialog.isShowing()) {
+            restoreEnterPasswordDialog = true;
+            enterPasswordText = dialogEnterPasswordBinding != null ?
+                    dialogEnterPasswordBinding.password.getText().toString() : null;
+            Log.i(Const.LOG_TAG, "Password dialog is open while the launcher is paused, it will be restored if the activity is recreated");
+        }
+    }
+
+    private void restoreEnterPasswordDialogIfNeeded() {
+        if (!restoreEnterPasswordDialog) {
+            return;
+        }
+        restoreEnterPasswordDialog = false;
+        if (enterPasswordDialog != null && enterPasswordDialog.isShowing()) {
+            // The dialog survived the pause, there's nothing to restore
+            enterPasswordText = null;
+            return;
+        }
+        String password = enterPasswordText;
+        enterPasswordText = null;
+        createAndShowEnterPasswordDialog(password);
+    }
+
+    private void clearEnterPasswordDialogState() {
+        restoreEnterPasswordDialog = false;
+        enterPasswordText = null;
+    }
+
     public void closeEnterPasswordDialog( View view ) {
+        clearEnterPasswordDialogState();
         dismissDialog(enterPasswordDialog);
         if (ProUtils.kioskModeRequired(this)) {
             checkAndStartLauncher();
@@ -2736,6 +2803,7 @@ public class MainActivity
 
                 if ( CryptoHelper.getMD5String( dialogEnterPasswordBinding.password.getText().toString() ).
                         equals( masterPassword ) ) {
+                    clearEnterPasswordDialogState();
                     dismissDialog(enterPasswordDialog);
                     dialogEnterPasswordBinding.setError( false );
                     openAdminPanel();
