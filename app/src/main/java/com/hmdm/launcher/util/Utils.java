@@ -595,6 +595,80 @@ public class Utils {
         return true;
     }
 
+    // Suspend (or unsuspend) the system Settings app. While suspended, every way into Settings
+    // that the launcher doesn't control - the "Settings" item in the power menu overflow, app info
+    // pages, etc. - shows the system "App not available" dialog instead of opening it.
+    // Only suspension is used (not setApplicationHidden): hiding Settings breaks some firmwares.
+    // Requires the app to be the device owner.
+    public static boolean setSettingsSuspended(boolean suspended, Context context) {
+        if (!isDeviceOwner(context) || Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+            return false;
+        }
+
+        DevicePolicyManager devicePolicyManager = (DevicePolicyManager) context.getSystemService(
+                Context.DEVICE_POLICY_SERVICE);
+        ComponentName adminComponentName = LegacyUtils.getAdminComponentName(context);
+        String settingsPackage = getSettingsPackage(context);
+
+        try {
+            if (devicePolicyManager.isPackageSuspended(adminComponentName, settingsPackage) == suspended) {
+                return true;
+            }
+            String[] failed = devicePolicyManager.setPackagesSuspended(adminComponentName,
+                    new String[]{ settingsPackage }, suspended);
+            if (failed != null && failed.length > 0) {
+                Log.w(Const.LOG_TAG, "Failed to " + (suspended ? "suspend" : "unsuspend") + " settings package " + settingsPackage);
+                return false;
+            }
+            Log.i(Const.LOG_TAG, "Settings package " + settingsPackage + (suspended ? " suspended" : " unsuspended"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+        return true;
+    }
+
+    // Package of the system Settings app (not always com.android.settings on OEM firmwares).
+    // Suspended packages still resolve, so this works while Settings is suspended.
+    public static String getSettingsPackage(Context context) {
+        try {
+            ResolveInfo info = context.getPackageManager().resolveActivity(
+                    new Intent(Settings.ACTION_SETTINGS), 0);
+            if (info != null && info.activityInfo != null) {
+                String pkg = info.activityInfo.packageName;
+                // "android" is the chooser, never suspend it (nor ourselves)
+                if (pkg != null && !pkg.equals("android") && !pkg.equals(context.getPackageName())) {
+                    return pkg;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return Const.SETTINGS_PACKAGE_NAME;
+    }
+
+    // Whether the intent opens the system Settings app
+    public static boolean isSettingsIntent(Context context, Intent intent) {
+        if (intent == null) {
+            return false;
+        }
+        String settingsPackage = getSettingsPackage(context);
+        if (intent.getAction() != null && intent.getAction().startsWith("android.settings.")) {
+            return true;
+        }
+        if (settingsPackage.equals(intent.getPackage()) ||
+                (intent.getComponent() != null && settingsPackage.equals(intent.getComponent().getPackageName()))) {
+            return true;
+        }
+        try {
+            ResolveInfo info = context.getPackageManager().resolveActivity(intent, 0);
+            return info != null && info.activityInfo != null &&
+                    settingsPackage.equals(info.activityInfo.packageName);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     // Disable the device's digital assistant so a long-press on Home (or the assist gesture)
     // no longer launches it. There is no DevicePolicyManager API to disable just the gesture,
     // so we detect whichever package currently provides the assistant (from the secure settings,

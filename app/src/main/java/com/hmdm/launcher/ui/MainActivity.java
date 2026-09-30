@@ -585,6 +585,15 @@ public class MainActivity
         // Disable screen auto-rotation (device owner policy, stays in effect globally).
         Utils.setAutoRotationDisabled(true, this);
 
+        // Keep the Settings app suspended so it can't be opened from the power menu (long-press
+        // power -> overflow -> Settings). The launcher unsuspends it when it opens Settings itself
+        // (see BaseActivity.startActivityForResult), so returning home locks it again.
+        // Not applied before the first configuration is received, so enrollment isn't affected.
+        ServerConfig resumeConfig = settingsHelper != null ? settingsHelper.getConfig() : null;
+        if (resumeConfig != null) {
+            Utils.setSettingsSuspended(!resumeConfig.isPermissive(), this);
+        }
+
         statusBarUpdater.startUpdating(this, binding.clock, binding.batteryState);
 
         startServicesWithRetry();

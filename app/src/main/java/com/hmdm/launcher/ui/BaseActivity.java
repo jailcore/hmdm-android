@@ -26,6 +26,7 @@ import android.app.admin.DevicePolicyManager;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
+import android.os.Bundle;
 import android.os.Handler;
 import android.provider.Settings;
 import android.util.Log;
@@ -40,6 +41,7 @@ import android.widget.CompoundButton;
 import android.widget.SeekBar;
 import android.widget.Toast;
 
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.databinding.DataBindingUtil;
 import androidx.localbroadcastmanager.content.LocalBroadcastManager;
@@ -87,6 +89,18 @@ public class BaseActivity extends AppCompatActivity {
 
     protected Dialog deviceSettingsDialog;
     protected DialogDeviceSettingsBinding dialogDeviceSettingsBinding;
+
+    // The Settings app is kept suspended while the launcher is shown (see MainActivity.onResume)
+    // so users can't reach it from the power menu. When the launcher itself opens a Settings page
+    // (Wi-Fi button, admin panel, permission requests), unsuspend it first.
+    // startActivity() and the Activity Result API both end up here.
+    @Override
+    public void startActivityForResult(Intent intent, int requestCode, @Nullable Bundle options) {
+        if (Utils.isSettingsIntent(this, intent)) {
+            Utils.setSettingsSuspended(false, this);
+        }
+        super.startActivityForResult(intent, requestCode, options);
+    }
 
     protected void dismissDialog(Dialog dialog) {
         if (dialog != null) {
