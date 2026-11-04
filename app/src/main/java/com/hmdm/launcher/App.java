@@ -20,7 +20,12 @@
 package com.hmdm.launcher;
 
 import android.app.Application;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.os.Build;
 
+import com.hmdm.launcher.receiver.ShutdownReceiver;
 import com.jakewharton.picasso.OkHttp3Downloader;
 import com.squareup.picasso.Picasso;
 
@@ -36,6 +41,16 @@ public class App extends Application {
         //built.setIndicatorsEnabled(true);
         //built.setLoggingEnabled(true);
         Picasso.setSingletonInstance(built);
+
+        // ACTION_SHUTDOWN is only delivered to receivers registered at runtime, the manifest
+        // declaration doesn't receive it. The registration lives as long as the app process.
+        IntentFilter shutdownFilter = new IntentFilter(Intent.ACTION_SHUTDOWN);
+        shutdownFilter.addAction("android.intent.action.QUICKBOOT_POWEROFF");
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            registerReceiver(new ShutdownReceiver(), shutdownFilter, Context.RECEIVER_EXPORTED);
+        } else {
+            registerReceiver(new ShutdownReceiver(), shutdownFilter);
+        }
     }
 
 }
