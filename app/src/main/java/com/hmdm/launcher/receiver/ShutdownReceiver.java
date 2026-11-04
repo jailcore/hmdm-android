@@ -25,11 +25,18 @@ import android.content.Intent;
 
 import com.hmdm.launcher.Const;
 import com.hmdm.launcher.util.RemoteLogger;
+import com.hmdm.launcher.util.Utils;
 
 public class ShutdownReceiver extends BroadcastReceiver {
 
     @Override
     public void onReceive(final Context context, final Intent intent) {
         RemoteLogger.log(context, Const.LOG_INFO, "Shutting down the device");
+
+        // Package suspension persists across reboots, and on boot the system briefly shows
+        // Settings' FallbackHome before the launcher starts. If Settings is still suspended,
+        // that shows the "Can't open this app" admin dialog. Unsuspend it here; MainActivity
+        // suspends it again in onResume once the launcher is up.
+        Utils.setSettingsSuspended(false, context);
     }
 }
